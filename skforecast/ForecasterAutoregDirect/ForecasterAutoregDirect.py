@@ -228,6 +228,7 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         self.regressors_ = {step: clone(self.regressor) for step in range(1, steps + 1)}
         self.steps = initialize_steps(type(self).__name__, steps)
+        self.max_step = max(self.steps)
         self.lags = initialize_lags(type(self).__name__, lags)
         self.max_lag = max(self.lags)
         self.window_size = self.max_lag
@@ -328,20 +329,20 @@ class ForecasterAutoregDirect(ForecasterBase):
         
         """
 
-        n_splits = len(y) - self.max_lag - (self.steps - 1)  # rows of y_data
+        n_splits = len(y) - self.max_lag - (self.max_step - 1)  # rows of y_data
         if n_splits <= 0:
             raise ValueError(
                 (f"The maximum lag ({self.max_lag}) must be less than the length "
-                 f"of the series minus the number of steps ({len(y) - (self.steps - 1)}).")
+                 f"of the series minus the number of steps ({len(y) - (self.max_step - 1)}).")
             )
         
         X_data = np.full(shape=(n_splits, len(self.lags)), fill_value=np.nan, dtype=float)
         for i, lag in enumerate(self.lags):
-            X_data[:, i] = y[self.max_lag - lag : -(lag + self.steps - 1)] 
+            X_data[:, i] = y[self.max_lag - lag : -(lag + self.max_step - 1)]
 
         y_data = np.full(shape=(self.steps, n_splits), fill_value=np.nan, dtype=float)
-        for step in range(self.steps):
-            y_data[step, ] = y[self.max_lag + step : self.max_lag + step + n_splits]
+        for i, step in enumerate(self.steps):
+            y_data[i, ] = y[self.max_lag + step : self.max_lag + step + n_splits]
             
         return X_data, y_data
 
@@ -370,20 +371,20 @@ class ForecasterAutoregDirect(ForecasterBase):
             Training values (predictors) for each step. Note that the index 
             corresponds to that of the last step. It is updated for the corresponding 
             step in the filter_train_X_y_for_step method.
-            Shape: (len(y) - self.max_lag, len(self.lags))
+            Shape: (len(y) - self.max_lag - self.max_step, len(self.lags))
         y_train : dict
             Values (target) of the time series related to each row of `X_train` 
             for each step of the form {step: y_step_[i]}.
-            Shape of each series: (len(y) - self.max_lag, )
+            Shape of each series: (len(y) - self.max_lag - self.max_step,)
         
         """
 
         if len(y) < self.max_lag + self.steps:
             raise ValueError(
                 (f"Minimum length of `y` for training this forecaster is "
-                 f"{self.max_lag + self.steps}. Got {len(y)}. Reduce the "
-                 f"number of predicted steps, {self.steps}, or the maximum "
-                 f"lag, {self.max_lag}, if no more data is available.")
+                 f"{self.max_lag + self.max_step}. Got {len(y)}. Reduce the "
+                 f"maximum number of predicted steps, {self.max_step}, "
+                 f"or the maximum lag, {self.max_lag}, if no more data is available.")
             )
 
         check_y(y=y)
@@ -430,7 +431,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         X_train = pd.DataFrame(
                       data    = X_train,
                       columns = X_train_col_names,
-                      index   = y_index[self.max_lag + (self.steps - 1):]
+                      index   = y_index[self.max_lag + (self.max_step - 1):]
                   )
 
         if exog is not None:
@@ -449,11 +450,11 @@ class ForecasterAutoregDirect(ForecasterBase):
             self.X_train_col_names = X_train.columns.to_list()
 
         y_train = {step: pd.Series(
-                             data  = y_train[step - 1], 
-                             index = y_index[self.max_lag + step - 1:][:len(y_train[0])],
+                             data  = y_train[i],
+                             index = y_index[self.max_lag + i:][:len(y_train[0])],
                              name  = f"y_step_{step}"
                          )
-                   for step in range(1, self.steps + 1)}
+                   for i, step in enumerate(self.steps)}
         
         return X_train, y_train
 
@@ -493,10 +494,10 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         """
 
-        if (step < 1) or (step > self.steps):
+        if step not in self.steps:
             raise ValueError(
-                (f"Invalid value `step`. For this forecaster, minimum value is 1 "
-                 f"and the maximum step is {self.steps}.")
+                (f"Invalid value `step`. For this forecaster, steps available "
+                 f"are {self.steps}.")
             )
 
         y_train_step = y_train[step]
@@ -609,7 +610,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         self.exog_dtypes         = None
         self.exog_col_names      = None
         self.X_train_col_names   = None
-        self.in_sample_residuals = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals = {step: None for step in self.steps}
         self.fitted              = False
         self.training_range      = None
 
@@ -689,7 +690,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                 step                      = step,
                 store_in_sample_residuals = store_in_sample_residuals
             )
-            for step in range(1, self.steps + 1))
+            for step in self.steps)
         )
 
         self.regressors_ = {step: regressor 
