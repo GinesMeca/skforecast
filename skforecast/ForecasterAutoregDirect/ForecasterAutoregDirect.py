@@ -220,12 +220,6 @@ class ForecasterAutoregDirect(ForecasterBase):
         self.skforecast_version      = skforecast.__version__
         self.python_version          = sys.version.split(" ")[0]
         self.forecaster_id           = forecaster_id
-
-        if not isinstance(steps, int):
-            raise TypeError(
-                (f"`steps` argument must be an int greater than or equal to 1. "
-                 f"Got {type(steps)}.")
-            )
         
         if not isinstance(n_jobs, int) and n_jobs != 'auto':
             raise TypeError(
