@@ -2922,7 +2922,7 @@ def prepare_residuals_multiseries(
 
 
 def prepare_steps_direct(
-    max_step: int,
+    init_steps: np.ndarray,
     steps: Optional[Union[int, list]] = None
 ) -> list:
     """
@@ -2953,7 +2953,7 @@ def prepare_steps_direct(
     if isinstance(steps, int):
         steps = list(np.arange(steps) + 1)
     elif steps is None:
-        steps = list(np.arange(max_step) + 1)
+        steps = list(init_steps)
     elif isinstance(steps, list):
         steps = list(np.array(steps))
     
