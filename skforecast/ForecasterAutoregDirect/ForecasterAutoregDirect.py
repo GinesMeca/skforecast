@@ -246,7 +246,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                               fit_kwargs = fit_kwargs
                           )
 
-        self.in_sample_residuals = {step: None for step in steps}
+        self.in_sample_residuals = {step: None for step in self.steps}
         self.out_sample_residuals = None
 
         if n_jobs == 'auto':
