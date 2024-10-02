@@ -17,7 +17,7 @@ def test_check_create_lags_exception_when_n_splits_less_than_0():
 
     err_msg = re.escape(
                 (f"The maximum lag ({forecaster.max_lag}) must be less than the length "
-                 f"of the series minus the number of steps ({len(y)-(forecaster.steps-1)}).")
+                 f"of the series minus the number of steps ({len(y)-(forecaster.max_step-1)}).")
             )
     with pytest.raises(ValueError, match = err_msg):
         forecaster._create_lags(y=y)
