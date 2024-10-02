@@ -342,7 +342,7 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         y_data = np.full(shape=(len(self.steps), n_splits), fill_value=np.nan, dtype=float)
         for i, step in enumerate(self.steps):
-            y_data[i, ] = y[self.max_lag + step - 1 : self.max_lag + step + n_splits]
+            y_data[i, ] = y[self.max_lag + step - 1 : self.max_lag + step - 1 + n_splits]
             
         return X_data, y_data
 
