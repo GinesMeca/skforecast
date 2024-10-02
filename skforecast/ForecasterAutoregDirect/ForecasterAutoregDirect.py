@@ -379,7 +379,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         
         """
 
-        if len(y) < self.max_lag + self.steps:
+        if len(y) < self.max_lag + self.max_step:
             raise ValueError(
                 (f"Minimum length of `y` for training this forecaster is "
                  f"{self.max_lag + self.max_step}. Got {len(y)}. Reduce the "
