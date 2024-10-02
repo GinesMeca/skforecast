@@ -770,7 +770,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         """
         
         steps = prepare_steps_direct(
-                    init_steps = self.steps,
+                    max_step = self.max_step,
                     steps    = steps
                 )
 

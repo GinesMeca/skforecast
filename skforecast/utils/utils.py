@@ -688,6 +688,7 @@ def check_interval(
     return
 
 
+# TODO: Change max_steps by init_steps and modify error messages when working with interleaved lists
 def check_predict_input(
     forecaster_name: str,
     steps: Union[int, list],
@@ -2920,9 +2921,9 @@ def prepare_residuals_multiseries(
         
     return residuals
 
-
+# TODO: Change max_step by init steps to predict steps defined in forecaster's definition
 def prepare_steps_direct(
-    init_steps: np.ndarray,
+    max_step: int,
     steps: Optional[Union[int, list]] = None
 ) -> list:
     """
@@ -2953,17 +2954,17 @@ def prepare_steps_direct(
     if isinstance(steps, int):
         steps = list(np.arange(steps) + 1)
     elif steps is None:
-        steps = list(init_steps)
+        steps = list(np.arange(max_step) + 1)
     elif isinstance(steps, list):
         steps = list(np.array(steps))
-    
+
     for step in steps:
         if not isinstance(step, (int, np.int64, np.int32)):
             raise TypeError(
                 (f"`steps` argument must be an int, a list of ints or `None`. "
                  f"Got {type(steps)}.")
             )
-    # Required since numpy 2.0
+        # Required since numpy 2.0
     steps = [int(step) for step in steps if step is not None]
 
     return steps
