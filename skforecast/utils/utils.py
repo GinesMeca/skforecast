@@ -1411,7 +1411,7 @@ def cast_exog_dtypes(
 
 def exog_to_direct(
         exog: Union[pd.Series, pd.DataFrame],
-        steps: int
+        steps: Union[int, np.ndarray]
 ) -> pd.DataFrame:
     """
     Transforms `exog` to a pandas DataFrame with the shape needed for Direct
@@ -1421,7 +1421,7 @@ def exog_to_direct(
     ----------
     exog : pandas Series, pandas DataFrame
         Exogenous variables.
-    steps : int.
+    steps : int, npumpy ndarray.
         Number of steps that will be predicted using exog.
 
     Returns
@@ -1437,14 +1437,17 @@ def exog_to_direct(
     if isinstance(exog, pd.Series):
         exog = exog.to_frame()
 
+    if isinstance(steps, (int, np.int32, np.int64)):
+        steps = [i for i in range(1, steps + 1)]
+
     n_rows = len(exog)
     exog_idx = exog.index
     exog_transformed = []
 
-    for i in range(steps):
-        exog_column_transformed = exog.iloc[i: n_rows - (steps - 1 - i), ]
+    for i in steps:
+        exog_column_transformed = exog.iloc[i - 1: n_rows - (np.max(steps) - i), ]
         exog_column_transformed.index = pd.RangeIndex(len(exog_column_transformed))
-        exog_column_transformed.columns = [f"{col}_step_{i + 1}"
+        exog_column_transformed.columns = [f"{col}_step_{i}"
                                            for col in exog_column_transformed.columns]
         exog_transformed.append(exog_column_transformed)
 
