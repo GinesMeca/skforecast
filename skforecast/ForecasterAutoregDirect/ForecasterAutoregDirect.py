@@ -1027,8 +1027,8 @@ class ForecasterAutoregDirect(ForecasterBase):
         if self.fitted:
             
             steps = prepare_steps_direct(
-                        steps    = steps,
-                        init_steps = self.steps
+                        max_step = self.max_step,
+                        steps    = steps
                     )
             
             if in_sample_residuals:
