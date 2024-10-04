@@ -2924,7 +2924,7 @@ def prepare_residuals_multiseries(
         
     return residuals
 
-# TODO: Change max_step by init steps to predict steps defined in forecaster's definition
+# TODO: Simplify after propagating steps-to-list implementation to ForecasterAutoregMultivariate
 def prepare_steps_direct(
     forecaster_name: str,
     init_steps: Union[int, np.ndarray],
