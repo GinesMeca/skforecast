@@ -56,8 +56,8 @@ def test_create_train_X_y_ValueError_when_len_y_is_lower_than_maximum_lag_plus_s
 
     err_msg = re.escape(
                 (f"Minimum length of `y` for training this forecaster is "
-                 f"{forecaster.max_lag + forecaster.steps}. Got {len(y)}. Reduce the "
-                 f"number of predicted steps, {forecaster.steps}, or the maximum "
+                 f"{forecaster.max_lag + forecaster.max_step}. Got {len(y)}. Reduce the "
+                 f"maximum number of predicted steps, {forecaster.max_step}, or the maximum "
                  f"lag, {forecaster.max_lag}, if no more data is available.")
             )
     with pytest.raises(ValueError, match = err_msg):
