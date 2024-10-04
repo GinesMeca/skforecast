@@ -2926,7 +2926,8 @@ def prepare_residuals_multiseries(
 
 # TODO: Change max_step by init steps to predict steps defined in forecaster's definition
 def prepare_steps_direct(
-    max_step: int,
+    forecaster_name: str,
+    init_steps: Union[int, np.ndarray],
     steps: Optional[Union[int, list]] = None
 ) -> list:
     """
@@ -2934,9 +2935,10 @@ def prepare_steps_direct(
 
     Parameters
     ----------
-    max_step : int
-        Maximum number of future steps the forecaster will predict 
-        when using method `predict()`.
+    forecaster_name: str
+        Forecaster name
+    init_steps : int or numpy ndarray
+        Steps initialized in forecaster's definition. These are the steps available to be predicted
     steps : int, list, None, default `None`
         Predict n steps. The value of `steps` must be less than or equal to the 
         value of steps defined when initializing the forecaster. Starts at 1.
@@ -2957,7 +2959,10 @@ def prepare_steps_direct(
     if isinstance(steps, int):
         steps = list(np.arange(steps) + 1)
     elif steps is None:
-        steps = list(np.arange(max_step) + 1)
+        if forecaster_name == 'ForecasterAutoregDirect':
+            steps = list(init_steps)
+        else:
+            steps = list(np.arange(init_steps) + 1)
     elif isinstance(steps, list):
         steps = list(np.array(steps))
 
