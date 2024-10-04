@@ -1354,7 +1354,7 @@ class ForecasterAutoregMultiSeries(ForecasterBase):
             exog_col_names   = self.exog_col_names,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            init_steps       = None,
             levels           = levels,
             series_col_names = self.series_col_names,
             encoding         = self.encoding

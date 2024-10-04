@@ -329,7 +329,7 @@ class ForecasterEquivalentDate():
             exog_col_names   = None,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            init_steps       = None,
             levels           = None,
             series_col_names = None
         )

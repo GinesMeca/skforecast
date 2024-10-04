@@ -1028,7 +1028,7 @@ class ForecasterAutoregMultiVariate(ForecasterBase):
             exog_col_names   = self.exog_col_names,
             interval         = None,
             alpha            = None,
-            max_steps        = self.steps,
+            init_steps       = self.steps,
             levels           = None,
             series_col_names = self.series_X_train
         )

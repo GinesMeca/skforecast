@@ -744,7 +744,7 @@ class ForecasterAutoreg(ForecasterBase):
             exog_col_names   = self.exog_col_names,
             interval         = None,
             alpha            = None,
-            max_steps        = None,
+            init_steps       = None,
             levels           = None,
             series_col_names = None
         )

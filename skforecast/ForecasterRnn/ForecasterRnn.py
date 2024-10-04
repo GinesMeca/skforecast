@@ -709,7 +709,7 @@ class ForecasterRnn(ForecasterBase):
             exog_col_names=None,
             interval=None,
             alpha=None,
-            max_steps=self.max_step,
+            init_steps=self.max_step,
             levels=levels,
             levels_forecaster=self.levels,
             series_col_names=self.series_col_names,
