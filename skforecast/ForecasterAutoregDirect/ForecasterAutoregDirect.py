@@ -1494,7 +1494,7 @@ class ForecasterAutoregDirect(ForecasterBase):
         
         if self.out_sample_residuals is None:
             self.out_sample_residuals = {step: None 
-                                         for step in range(1, self.steps + 1)}
+                                         for step in self.steps}
         
         if not set(self.out_sample_residuals.keys()).issubset(set(residuals.keys())):
             warnings.warn(
