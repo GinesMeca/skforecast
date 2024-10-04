@@ -228,7 +228,7 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         self.steps = initialize_steps(type(self).__name__, steps)
         self.max_step = max(self.steps)
-        self.regressors_ = {step: clone(self.regressor) for step in steps}
+        self.regressors_ = {step: clone(self.regressor) for step in self.steps}
         self.lags = initialize_lags(type(self).__name__, lags)
         self.max_lag = max(self.lags)
         self.window_size = self.max_lag
