@@ -1590,9 +1590,9 @@ class ForecasterAutoregDirect(ForecasterBase):
                  "arguments before using `get_feature_importances()`.")
             )
 
-        if (step < 1) or (step > self.steps):
+        if step not in self.steps:
             raise ValueError(
-                (f"The step must have a value from 1 to the maximum number of steps "
+                (f"The step must be in initialized steps set "
                  f"({self.steps}). Got {step}.")
             )
 
