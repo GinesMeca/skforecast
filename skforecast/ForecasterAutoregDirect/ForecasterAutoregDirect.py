@@ -507,7 +507,7 @@ class ForecasterAutoregDirect(ForecasterBase):
             X_train_step = X_train
         else:
             idx_columns_lags = np.arange(len(self.lags))
-            n_exog = (len(self.X_train_col_names) - len(self.lags)) / self.steps
+            n_exog = (len(self.X_train_col_names) - len(self.lags)) / len(self.steps)
             idx_columns_exog = (
                 np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_lags[-1] + 1
             )
