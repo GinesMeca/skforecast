@@ -509,7 +509,7 @@ class ForecasterAutoregDirect(ForecasterBase):
             idx_columns_lags = np.arange(len(self.lags))
             n_exog = (len(self.X_train_col_names) - len(self.lags)) / len(self.steps)
             idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_lags[-1] + 1
+                np.arange((list(self.steps).index(step)) * n_exog, (list(self.steps).index(step) + 1) * n_exog) + idx_columns_lags[-1] + 1
             )
             idx_columns = np.hstack((idx_columns_lags, idx_columns_exog))
             X_train_step = X_train.iloc[:, idx_columns]
@@ -681,17 +681,17 @@ class ForecasterAutoregDirect(ForecasterBase):
             return step, regressor, residuals
 
         results_fit = (
-            Parallel(n_jobs=self.n_jobs)
-            (delayed(fit_forecaster)
-            (
-                regressor                 = copy(self.regressor),
-                X_train                   = X_train,
-                y_train                   = y_train,
-                step                      = step,
-                store_in_sample_residuals = store_in_sample_residuals
-            )
-            for step in self.steps)
-        )
+                    Parallel(n_jobs=self.n_jobs)
+                    (delayed(fit_forecaster)
+                    (
+                        regressor                 = copy(self.regressor),
+                        X_train                   = X_train,
+                        y_train                   = y_train,
+                        step                      = step,
+                        store_in_sample_residuals = store_in_sample_residuals
+                    )
+                    for step in self.steps)
+                )
 
         self.regressors_ = {step: regressor 
                             for step, regressor, _ in results_fit}
