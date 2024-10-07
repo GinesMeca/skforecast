@@ -806,7 +806,7 @@ def check_predict_input(
                     raise ValueError(
                         (f"'steps' should match with steps defined when "
                          f"initializing the forecaster."
-                         f"Got {steps}, but available steps are {init_steps}")
+                         f"Got {steps}, but steps available are {init_steps}")
                     )
 
 
