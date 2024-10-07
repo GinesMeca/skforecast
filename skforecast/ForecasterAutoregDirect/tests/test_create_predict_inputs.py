@@ -50,6 +50,27 @@ def test_create_predict_inputs_NotFittedError_when_fitted_is_False():
         forecaster._create_predict_inputs(steps=5)
 
 
+def test_create_predict_inputs_error_when_pred_steps_are_not_in_train_steps():
+    """
+    Test _create_predict_inputs output when pred steps aren't in init steps
+    """
+
+    train_steps = [1, 3, 5]
+    pred_steps = [1, 4]
+
+    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=train_steps)
+    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
+
+    err_msg = re.escape(
+        (f"'steps' should match with steps defined when "
+         f"initializing the forecaster."
+         f"Got {pred_steps}, but steps available are {np.array(train_steps)}")
+    )
+
+    with pytest.raises(ValueError, match = err_msg):
+        forecaster._create_predict_inputs(steps=pred_steps)
+
+
 @pytest.mark.parametrize("steps", [3, [1, 2, 3], None], 
                          ids=lambda steps: f'steps: {steps}')
 def test_create_predict_inputs_output(steps):
@@ -98,28 +119,6 @@ def test_create_predict_inputs_output_when_regressor_is_LinearRegression_with_li
     assert results[1] == expected[1]
     pd.testing.assert_index_equal(results[2], expected[2])
     assert results[3] == expected[3]
-
-
-def test_create_predict_inputs_error_when_pred_steps_are_not_in_train_steps():
-    """
-    Test _create_predict_inputs output when steps is
-    a list with interspersed steps.
-    """
-
-    train_steps = [1, 3, 5]
-    pred_steps = [1, 4]
-
-    forecaster = ForecasterAutoregDirect(LinearRegression(), lags=3, steps=train_steps)
-    forecaster.fit(y=pd.Series(np.arange(50, dtype=float)))
-
-    err_msg = re.escape(
-        (f"'steps' should match with steps defined when "
-         f"initializing the forecaster."
-         f"Got {pred_steps}, but steps available are {np.array(train_steps)}")
-    )
-
-    with pytest.raises(ValueError, match = err_msg):
-        forecaster._create_predict_inputs(steps=pred_steps)
 
 
 def test_create_predict_inputs_output_when_last_window():
