@@ -451,7 +451,7 @@ class ForecasterAutoregDirect(ForecasterBase):
 
         y_train = {step: pd.Series(
                              data  = y_train[i],
-                             index = y_index[self.max_lag + i:][:len(y_train[0])],
+                             index = y_index[self.max_lag + step - 1:][:len(y_train[0])],
                              name  = f"y_step_{step}"
                          )
                    for i, step in enumerate(self.steps)}
