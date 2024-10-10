@@ -7,7 +7,7 @@ import pandas as pd
 from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect
 from sklearn.linear_model import LinearRegression
 
-
+# TODO: Move to utils tests
 def test_init_TypeError_when_steps_is_not_int():
     """
     Test TypeError is raised when steps is not an int.
@@ -21,6 +21,7 @@ def test_init_TypeError_when_steps_is_not_int():
         ForecasterAutoregDirect(LinearRegression(), lags=2, steps=steps)
 
 
+# TODO: Move to utils tests
 def test_init_ValueError_when_steps_is_less_than_1():
     """
     Test ValueError is raised when steps is less than 1.
