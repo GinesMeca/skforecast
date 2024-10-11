@@ -477,10 +477,10 @@ def _backtesting_forecaster(
                  f" amounts of time. If not feasible, try with `refit = False`.\n"),
                 LongTrainingWarning
             )
-        elif type(forecaster).__name__ == 'ForecasterAutoregDirect' and n_of_fits * forecaster.steps > 50:
+        elif type(forecaster).__name__ == 'ForecasterAutoregDirect' and n_of_fits * len(forecaster.steps) > 50:
             warnings.warn(
-                (f"The forecaster will be fit {n_of_fits * forecaster.steps} times "
-                 f"({n_of_fits} folds * {forecaster.steps} regressors). This can take "
+                (f"The forecaster will be fit {n_of_fits * len(forecaster.steps)} times "
+                 f"({n_of_fits} folds * {len(forecaster.steps)} regressors). This can take "
                  f"substantial amounts of time. If not feasible, try with `refit = False`.\n"),
                 LongTrainingWarning
             )
@@ -756,11 +756,11 @@ def backtesting_forecaster(
     )
     
     if type(forecaster).__name__ == 'ForecasterAutoregDirect' and \
-       forecaster.steps < steps + gap:
+       forecaster.max_step < steps + gap:
         raise ValueError(
             (f"When using a ForecasterAutoregDirect, the combination of steps "
              f"+ gap ({steps + gap}) cannot be greater than the `steps` parameter "
-             f"declared when the forecaster is initialized ({forecaster.steps}).")
+             f"declared when the forecaster is initialized ({forecaster.max_step}).")
         )
     
     metric_values, backtest_predictions = _backtesting_forecaster(
