@@ -195,4 +195,26 @@ def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_
                    index   = pd.RangeIndex(start=50, stop=52)
                )
     
-    pd.testing.assert_frame_equal(expected, results)        
+    pd.testing.assert_frame_equal(expected, results)
+
+
+def test_predict_bootstrapping_output_when_forecaster_is_LinearRegression_steps_is_2_in_sample_residuals_fixed_and_init_steps_interspersed():
+    """
+    Test output of predict_bootstrapping when regressor is LinearRegression,
+    2 steps are predicted, using in-sample residuals that are fixed.
+    """
+    forecaster = ForecasterAutoregDirect(
+        regressor=LinearRegression(),
+        steps=[2],
+        lags=3
+    )
+    forecaster.fit(y=y, exog=exog)
+    forecaster.in_sample_residuals = {2: pd.Series([5, 5, 5, 5, 5, 5, 5])}
+    results = forecaster.predict_bootstrapping(steps=[2], exog=exog_predict, n_boot=4, in_sample_residuals=True)
+    expected = pd.DataFrame(
+        data=np.array([[5.38024988, 5.38024988, 5.38024988, 5.38024988]]),
+        columns=[f"pred_boot_{i}" for i in range(4)],
+        index=pd.RangeIndex(start=51, stop=52)
+    )
+
+    pd.testing.assert_frame_equal(expected, results)
