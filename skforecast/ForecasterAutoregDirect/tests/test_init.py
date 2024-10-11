@@ -7,30 +7,6 @@ import pandas as pd
 from skforecast.ForecasterAutoregDirect import ForecasterAutoregDirect
 from sklearn.linear_model import LinearRegression
 
-# TODO: Move to utils tests
-def test_init_TypeError_when_steps_is_not_int():
-    """
-    Test TypeError is raised when steps is not an int.
-    """
-    steps = 'not_valid_type'
-    err_msg = re.escape(
-                 "`steps` argument must be an int, 1d numpy ndarray, range, tuple or list. "
-                 f"Got {type(steps)}."
-            )
-    with pytest.raises(TypeError, match = err_msg):
-        ForecasterAutoregDirect(LinearRegression(), lags=2, steps=steps)
-
-
-# TODO: Move to utils tests
-def test_init_ValueError_when_steps_is_less_than_1():
-    """
-    Test ValueError is raised when steps is less than 1.
-    """
-    steps = 0
-    err_msg = re.escape(f"`steps` argument must be greater than or equal to 1. Got {steps}.")
-    with pytest.raises(ValueError, match = err_msg):
-        ForecasterAutoregDirect(LinearRegression(), lags=2, steps=steps)
-
 
 @pytest.mark.parametrize("n_jobs", 
                          [1.0, 'not_int_auto'], 
