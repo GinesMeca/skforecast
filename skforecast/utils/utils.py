@@ -327,7 +327,6 @@ def initialize_lags_grid(
 
 
 def initialize_steps(
-        forecaster_name: str,
         steps: Any
 ) -> np.ndarray:
     """
@@ -335,8 +334,6 @@ def initialize_steps(
 
     Parameters
     ----------
-    forecaster_name : str
-        Forecaster name.
     steps : int, list, numpy ndarray, range
         Number of future steps the forecaster will predict.
 
@@ -365,16 +362,10 @@ def initialize_steps(
         if np.any(steps < 1):
             raise ValueError("Minimum value of steps allowed is 1.")
     else:
-        if forecaster_name != 'ForecasterAutoregMultiVariate':
-            raise TypeError(
-                (f"`steps` argument must be an int, 1d numpy ndarray, range, tuple or list. "
-                 f"Got {type(steps)}.")
-            )
-        else:
-            raise TypeError(
-                ("`steps` argument must be a dict, int, 1d numpy ndarray, range, tuple or list. "
-                 f"Got {type(steps)}.")
-            )
+        raise TypeError(
+            (f"`steps` argument must be an int, 1d numpy ndarray, range, tuple or list. "
+             f"Got {type(steps)}.")
+        )
 
     return steps
 

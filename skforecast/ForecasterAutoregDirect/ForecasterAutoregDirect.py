@@ -226,7 +226,7 @@ class ForecasterAutoregDirect(ForecasterBase):
                 f"`n_jobs` must be an integer or `'auto'`. Got {type(n_jobs)}."
             )
 
-        self.steps = initialize_steps(type(self).__name__, steps)
+        self.steps = initialize_steps(steps)
         self.max_step = max(self.steps)
         self.regressors_ = {step: clone(self.regressor) for step in self.steps}
         self.lags = initialize_lags(type(self).__name__, lags)
