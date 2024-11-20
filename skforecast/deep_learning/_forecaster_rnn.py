@@ -706,7 +706,7 @@ class ForecasterRnn(ForecasterBase):
             exog_type_in_=None,
             exog_names_in_=None,
             interval=None,
-            max_steps=self.max_step,
+            init_steps=self.max_step,
             levels=levels,
             levels_forecaster=self.levels,
             series_names_in_=self.series_names_in_,
@@ -738,7 +738,8 @@ class ForecasterRnn(ForecasterBase):
         #     predictions_reshaped = np.reshape(
         #         predictions, (predictions.shape[1], predictions.shape[2])
         #     )
-        idx = expand_index(index=last_window_index, steps=max(steps))
+        # TODO: Broken after expand_index modifications. int(max(steps))??
+        idx= expand_index(index=last_window_index, steps=max(steps))
 
         predictions = pd.DataFrame(
             data=predictions_reshaped[np.array(steps) - 1],

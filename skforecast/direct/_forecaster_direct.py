@@ -23,6 +23,7 @@ from ..utils import (
     initialize_lags,
     initialize_window_features,
     initialize_weights,
+    initialize_steps,
     check_select_fit_kwargs,
     check_y,
     check_exog,
@@ -55,8 +56,8 @@ class ForecasterDirect(ForecasterBase):
     ----------
     regressor : regressor or pipeline compatible with the scikit-learn API
         An instance of a regressor or pipeline compatible with the scikit-learn API.
-    steps : int
-        Maximum number of future steps the forecaster will predict when using
+    steps : int, list, numpy ndarray, range
+        Number of future steps the forecaster will predict when using
         method `predict()`. Since a different model is created for each step,
         this value should be defined before training.
     lags : int, list, numpy ndarray, range, default `None`
@@ -109,7 +110,7 @@ class ForecasterDirect(ForecasterBase):
     regressors_ : dict
         Dictionary with regressors trained for each step. They are initialized 
         as a copy of `regressor`.
-    steps : int
+    steps : numpy ndarray
         Number of future steps the forecaster will predict when using method
         `predict()`. Since a different model is created for each step, this value
         should be defined before training.
@@ -237,7 +238,7 @@ class ForecasterDirect(ForecasterBase):
     def __init__(
         self,
         regressor: object,
-        steps: int,
+        steps: Union[int, np.ndarray, list],
         lags: Optional[Union[int, list, np.ndarray, range]] = None,
         window_features: Optional[Union[object, list]] = None,
         transformer_y: Optional[object] = None,
@@ -250,7 +251,6 @@ class ForecasterDirect(ForecasterBase):
     ) -> None:
         
         self.regressor                          = copy(regressor)
-        self.steps                              = steps
         self.transformer_y                      = transformer_y
         self.transformer_exog                   = transformer_exog
         self.weight_func                        = weight_func
@@ -281,19 +281,10 @@ class ForecasterDirect(ForecasterBase):
         self.in_sample_residuals_by_bin_        = None
         self.out_sample_residuals_by_bin_       = None
 
-        if not isinstance(steps, int):
-            raise TypeError(
-                (f"`steps` argument must be an int greater than or equal to 1. "
-                 f"Got {type(steps)}.")
-            )
-
-        if steps < 1:
-            raise ValueError(
-                f"`steps` argument must be greater than or equal to 1. Got {steps}."
-            )
-
-        self.regressors_ = {step: clone(self.regressor) for step in range(1, steps + 1)}
         self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
+        self.steps = initialize_steps(steps)
+        self.max_step = np.max(self.steps)
+        self.regressors_ = {step: clone(self.regressor) for step in self.steps}
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
@@ -335,7 +326,7 @@ class ForecasterDirect(ForecasterBase):
                               fit_kwargs = fit_kwargs
                           )
 
-        self.in_sample_residuals_ = {step: None for step in range(1, steps + 1)}
+        self.in_sample_residuals_ = {step: None for step in self.steps}
         self.out_sample_residuals_ = None
 
         if n_jobs == 'auto':
@@ -379,7 +370,7 @@ class ForecasterDirect(ForecasterBase):
             f"Lags: {self.lags} \n"
             f"Window features: {self.window_features_names} \n"
             f"Window size: {self.window_size} \n"
-            f"Maximum steps to predict: {self.steps} \n"
+            f"Steps to predict: {self.steps} \n"
             f"Exogenous included: {self.exog_in_} \n"
             f"Exogenous names: {exog_names_in_} \n"
             f"Transformer for y: {self.transformer_y} \n"
@@ -515,7 +506,7 @@ class ForecasterDirect(ForecasterBase):
         
         """
         
-        n_rows = len(y) - self.window_size - (self.steps - 1)
+        n_rows = len(y) - self.window_size - (self.max_step - 1)
         
         X_data = None
         if self.lags is not None:
@@ -523,7 +514,7 @@ class ForecasterDirect(ForecasterBase):
                 shape=(n_rows, len(self.lags)), fill_value=np.nan, order='F', dtype=float
             )
             for i, lag in enumerate(self.lags):
-                X_data[:, i] = y[self.window_size - lag : -(lag + self.steps - 1)] 
+                X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)]
 
             if X_as_pandas:
                 X_data = pd.DataFrame(
@@ -533,10 +524,10 @@ class ForecasterDirect(ForecasterBase):
                          )
 
         y_data = np.full(
-            shape=(n_rows, self.steps), fill_value=np.nan, order='F', dtype=float
+            shape=(n_rows, len(self.steps)), fill_value=np.nan, order='F', dtype=float
         )
-        for step in range(self.steps):
-            y_data[:, step] = y[self.window_size + step : self.window_size + step + n_rows]
+        for i, step in enumerate(self.steps):
+            y_data[:, i] = y[self.window_size + step - 1 : self.window_size + step - 1 + n_rows]
         
         return X_data, y_data
 
@@ -638,14 +629,14 @@ class ForecasterDirect(ForecasterBase):
         check_y(y=y)
         y = input_to_frame(data=y, input_name='y')
 
-        if len(y) < self.window_size + self.steps:
+        if len(y) < self.window_size + self.max_step:
             raise ValueError(
                 f"Minimum length of `y` for training this forecaster is "
-                f"{self.window_size + self.steps}. Reduce the number of "
+                f"{self.window_size + self.max_step}. Reduce the number of "
                 f"predicted steps, {self.steps}, or the maximum "
                 f"window_size, {self.window_size}, if no more data is available.\n"
                 f"    Length `y`: {len(y)}.\n"
-                f"    Max step : {self.steps}.\n"
+                f"    Max step : {self.max_step}.\n"
                 f"    Max window size: {self.window_size}.\n"
                 f"    Lags window size: {self.max_lag}.\n"
                 f"    Window features window size: {self.max_size_window_features}."
@@ -707,7 +698,7 @@ class ForecasterDirect(ForecasterBase):
             
         X_train = []
         X_train_features_names_out_ = []
-        train_index = y_index[self.window_size + (self.steps - 1):]
+        train_index = y_index[self.window_size + (self.max_step - 1):]
         len_train_index = len(train_index)
         X_as_pandas = True if categorical_features else False
 
@@ -721,7 +712,7 @@ class ForecasterDirect(ForecasterBase):
         X_train_window_features_names_out_ = None
         if self.window_features is not None:
             n_diff = 0 if self.differentiation is None else self.differentiation
-            end_wf = None if self.steps == 1 else -(self.steps - 1)
+            end_wf = None if self.max_step == 1 else -(self.max_step - 1)
             y_window_features = pd.Series(
                 y_values[n_diff:end_wf], index=y_index[n_diff:end_wf]
             )
@@ -780,11 +771,11 @@ class ForecasterDirect(ForecasterBase):
 
         y_train = {
             step: pd.Series(
-                      data  = y_train[:, step - 1], 
+                      data  = y_train[:, i],
                       index = y_index[self.window_size + step - 1:][:len_train_index],
                       name  = f"y_step_{step}"
                   )
-            for step in range(1, self.steps + 1)
+            for i, step in enumerate(self.steps)
         }
         
         return (
@@ -867,10 +858,10 @@ class ForecasterDirect(ForecasterBase):
 
         """
 
-        if (step < 1) or (step > self.steps):
+        if step not in self.steps:
             raise ValueError(
-                (f"Invalid value `step`. For this forecaster, minimum value is 1 "
-                 f"and the maximum step is {self.steps}.")
+                (f"Invalid value `step`. For this forecaster, steps available "
+                 f"are {self.steps}.")
             )
 
         y_train_step = y_train[step]
@@ -884,9 +875,9 @@ class ForecasterDirect(ForecasterBase):
                 len(self.X_train_window_features_names_out_) if self.window_features is not None else 0
             )
             idx_columns_autoreg = np.arange(n_lags + n_window_features)
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.steps
+            n_exog = len(self.X_train_direct_exog_names_out_) / len(self.steps)
             idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
+                np.arange((list(self.steps).index(step)) * n_exog, (list(self.steps).index(step) + 1) * n_exog) + idx_columns_autoreg[-1] + 1
             )
             idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
             X_train_step = X_train.iloc[:, idx_columns]
@@ -1046,7 +1037,7 @@ class ForecasterDirect(ForecasterBase):
         self.X_train_exog_names_out_            = None
         self.X_train_direct_exog_names_out_     = None
         self.X_train_features_names_out_        = None
-        self.in_sample_residuals_               = {step: None for step in range(1, self.steps + 1)}
+        self.in_sample_residuals_               = {step: None for step in self.steps}
         self.is_fitted                          = False
         self.fit_date                           = None
 
@@ -1133,7 +1124,7 @@ class ForecasterDirect(ForecasterBase):
                 step                      = step,
                 store_in_sample_residuals = store_in_sample_residuals
             )
-            for step in range(1, self.steps + 1))
+            for step in self.steps)
         )
 
         self.regressors_ = {step: regressor 
@@ -1216,8 +1207,9 @@ class ForecasterDirect(ForecasterBase):
         """
         
         steps = prepare_steps_direct(
-                    max_step = self.steps,
-                    steps    = steps
+                    forecaster_name = type(self).__name__,
+                    init_steps      = self.steps,
+                    steps           = steps
                 )
 
         if last_window is None:
@@ -1237,7 +1229,7 @@ class ForecasterDirect(ForecasterBase):
                 exog_type_in_   = self.exog_type_in_,
                 exog_names_in_  = self.exog_names_in_,
                 interval        = None,
-                max_steps       = self.steps
+                init_steps      = self.steps
             )
 
         last_window = last_window.iloc[-self.window_size:].copy()
@@ -1509,8 +1501,9 @@ class ForecasterDirect(ForecasterBase):
         if self.is_fitted:
             
             steps = prepare_steps_direct(
-                        steps    = steps,
-                        max_step = self.steps
+                        forecaster_name = type(self).__name__,
+                        init_steps      = self.steps,
+                        steps           = steps
                     )
             
             if use_in_sample_residuals:
@@ -1885,7 +1878,7 @@ class ForecasterDirect(ForecasterBase):
         self.regressor.set_params(**params)
         self.regressors_ = {
             step: clone(self.regressor)
-            for step in range(1, self.steps + 1)
+            for step in self.steps
         }
 
     def set_fit_kwargs(
@@ -2074,10 +2067,10 @@ class ForecasterDirect(ForecasterBase):
         
         if self.out_sample_residuals_ is None:
             self.out_sample_residuals_ = {
-                step: None for step in range(1, self.steps + 1)
+                step: None for step in self.steps
             }
         
-        steps_to_update = set(range(1, self.steps + 1)).intersection(set(y_pred.keys()))
+        steps_to_update = set(self.steps).intersection(set(y_pred.keys()))
         if not steps_to_update:
             warnings.warn(
                 "Provided keys in `y_pred` and `y_true` do not match any step. "
@@ -2163,9 +2156,9 @@ class ForecasterDirect(ForecasterBase):
                  "arguments before using `get_feature_importances()`.")
             )
 
-        if (step < 1) or (step > self.steps):
+        if step not in self.steps:
             raise ValueError(
-                (f"The step must have a value from 1 to the maximum number of steps "
+                (f"The step must be in initialized steps set "
                  f"({self.steps}). Got {step}.")
             )
 
@@ -2182,9 +2175,9 @@ class ForecasterDirect(ForecasterBase):
         if not self.exog_in_:
             idx_columns = idx_columns_autoreg
         else:
-            n_exog = len(self.X_train_direct_exog_names_out_) / self.steps
+            n_exog = len(self.X_train_direct_exog_names_out_) / len(self.steps)
             idx_columns_exog = (
-                np.arange((step - 1) * n_exog, (step) * n_exog) + idx_columns_autoreg[-1] + 1
+                np.arange(list(self.steps).index([step]) * n_exog, (list(self.steps).index([step]) + 1) * n_exog) + idx_columns_autoreg[-1] + 1
             )
             idx_columns = np.concatenate((idx_columns_autoreg, idx_columns_exog))
         

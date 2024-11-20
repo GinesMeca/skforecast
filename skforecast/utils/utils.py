@@ -292,6 +292,44 @@ def initialize_weights(
     return weight_func, source_code_weight_func, series_weights
 
 
+
+def initialize_steps(
+        steps: Any
+) -> np.ndarray:
+    """
+    Check steps argument input and generate the corresponding numpy ndarray.
+    Parameters
+    ----------
+    steps : int, list, numpy ndarray, range
+        Number of future steps the forecaster will predict.
+    Returns
+    -------
+    steps : numpy ndarray
+        Number of future steps the forecaster will predict.
+    """
+    if isinstance(steps, int):
+        if steps < 1:
+            raise ValueError(f"`steps` argument must be greater than or equal to 1. Got {steps}.")
+        steps = np.arange(1, steps + 1)
+    if isinstance(steps, (list, tuple, range)):
+        steps = np.array(steps)
+    if isinstance(steps, np.ndarray):
+        if steps.ndim != 1:
+            raise ValueError("`steps` must be a 1-dimensional array.")
+        if steps.size == 0:
+            raise ValueError("Argument `steps` must contain at least one value.")
+        if not np.issubdtype(steps.dtype, np.integer):
+            raise TypeError("All values in `steps` must be integers.")
+        if np.any(steps < 1):
+            raise ValueError("Minimum value of steps allowed is 1.")
+    else:
+        raise TypeError(
+            (f"`steps` argument must be an int, 1d numpy ndarray, range, tuple or list. "
+             f"Got {type(steps)}.")
+        )
+
+    return steps
+
 def initialize_transformer_series(
     forecaster_name: str,
     series_names_in_: list,
@@ -673,7 +711,7 @@ def check_interval(
 
     return
 
-
+# TODO: Code simplification after interspersed steps development propagation to ForecasterAutoregMultiVariate
 def check_predict_input(
     forecaster_name: str,
     steps: Union[int, list],
@@ -689,7 +727,7 @@ def check_predict_input(
     exog_names_in_: Optional[list] = None,
     interval: Optional[list] = None,
     alpha: Optional[float] = None,
-    max_steps: Optional[int] = None,
+    init_steps: Optional[Union[int, np.ndarray]]= None,
     levels: Optional[Union[str, list]] = None,
     levels_forecaster: Optional[Union[str, list]] = None,
     series_names_in_: Optional[list] = None,
@@ -735,9 +773,9 @@ def check_predict_input(
         interval of 95% should be as `interval = [2.5, 97.5]`.
     alpha : float, default `None`
         The confidence intervals used in ForecasterSarimax are (1 - alpha) %.
-    max_steps: int, default `None`
-        Maximum number of steps allowed (`ForecasterDirect` and 
-        `ForecasterDirectMultiVariate`).
+    init_steps: int or numpy ndarray, default `None`
+         Steps intialized in forecaster's definition (`ForecasterAutoregDirect` and
+        `ForecasterAutoregMultiVariate`).
     levels : str, list, default `None`
         Time series to be predicted (`ForecasterRecursiveMultiSeries`
         and `ForecasterRnn).
@@ -745,7 +783,7 @@ def check_predict_input(
         Time series used as output data of a multiseries problem in a RNN problem
         (`ForecasterRnn`).
     series_names_in_ : list, default `None`
-        Names of the columns used during fit (`ForecasterRecursiveMultiSeries`, 
+        Names of the columns used during fit (`ForecasterRecursiveMultiSeries`,
         `ForecasterDirectMultiVariate` and `ForecasterRnn`).
     encoding : str, default `None`
         Encoding used to identify the different series (`ForecasterRecursiveMultiSeries`).
@@ -762,10 +800,12 @@ def check_predict_input(
              "appropriate arguments before using predict.")
         )
 
-    if isinstance(steps, (int, np.integer)) and steps < 1:
-        raise ValueError(
-            f"`steps` must be an integer greater than or equal to 1. Got {steps}."
-        )
+    if isinstance(steps, (int, np.integer)):
+        if steps < 1:
+            raise ValueError(
+                f"`steps` must be an integer greater than or equal to 1. Got {steps}."
+            )
+        steps = list([steps])
 
     if isinstance(steps, list) and min(steps) < 1:
         raise ValueError(
@@ -773,18 +813,27 @@ def check_predict_input(
             f"Got {min(steps)}.")
         )
 
-    if max_steps is not None:
-        if max(steps) > max_steps:
-            raise ValueError(
-                (f"The maximum value of `steps` must be less than or equal to "
-                 f"the value of steps defined when initializing the forecaster. "
-                 f"Got {max(steps)}, but the maximum is {max_steps}.")
-            )
+    if init_steps is not None:
+        if isinstance(init_steps, (int, np.int32, np.int64)):  # ForecasterAutoregMultiVariate (& ForecasterRNN?)
+            if max(steps) > init_steps:
+                raise ValueError(
+                    (f"The maximum value of `steps` must be less than or equal to "
+                     f"the value of steps defined when initializing the forecaster. "
+                     f"Got {max(steps)}, but the maximum is {init_steps}.")
+                )
+        if isinstance(init_steps, np.ndarray):  # ForecasterAutoregDirect
+            for step in steps:
+                if step not in init_steps:
+                    raise ValueError(
+                        (f"'steps' should match with steps defined when "
+                         f"initializing the forecaster."
+                         f"Got {steps}, but available steps are {init_steps}")
+                    )
 
     if interval is not None or alpha is not None:
         check_interval(interval=interval, alpha=alpha)
 
-    if forecaster_name in ['ForecasterRecursiveMultiSeries', 
+    if forecaster_name in ['ForecasterRecursiveMultiSeries',
                            'ForecasterRnn']:
         if not isinstance(levels, (type(None), str, list)):
             raise TypeError(
@@ -834,7 +883,7 @@ def check_predict_input(
     # Checks last_window
     # Check last_window type (pd.Series or pd.DataFrame according to forecaster)
     if isinstance(last_window, type(None)) and forecaster_name not in [
-        'ForecasterRecursiveMultiSeries', 
+        'ForecasterRecursiveMultiSeries',
         'ForecasterRnn'
     ]:
         raise ValueError(
@@ -842,7 +891,7 @@ def check_predict_input(
              "to retrain the Forecaster, provide `last_window` as argument.")
         )
 
-    if forecaster_name in ['ForecasterRecursiveMultiSeries', 
+    if forecaster_name in ['ForecasterRecursiveMultiSeries',
                            'ForecasterDirectMultiVariate',
                            'ForecasterRnn']:
         if not isinstance(last_window, pd.DataFrame):
@@ -852,7 +901,7 @@ def check_predict_input(
 
         last_window_cols = last_window.columns.to_list()
 
-        if forecaster_name in ['ForecasterRecursiveMultiSeries', 
+        if forecaster_name in ['ForecasterRecursiveMultiSeries',
                                'ForecasterRnn'] and \
             len(set(levels) - set(last_window_cols)) != 0:
             raise ValueError(
@@ -1382,19 +1431,20 @@ def cast_exog_dtypes(
     return exog
 
 
+# TODO: Remove int type from steps once propagated steps-to-list changes from Direct to Multivariate
 def exog_to_direct(
-    exog: Union[pd.Series, pd.DataFrame],
-    steps: int
-) -> Union[pd.DataFrame, list]:
+        exog: Union[pd.Series, pd.DataFrame],
+        steps: Union[int, np.ndarray]
+) -> pd.DataFrame:
     """
     Transforms `exog` to a pandas DataFrame with the shape needed for Direct
     forecasting.
-    
+
     Parameters
     ----------
     exog : pandas Series, pandas DataFrame
         Exogenous variables.
-    steps : int
+    steps : int, npumpy ndarray.
         Number of steps that will be predicted using exog.
 
     Returns
@@ -1402,9 +1452,9 @@ def exog_to_direct(
     exog_direct : pandas DataFrame
         Exogenous variables transformed.
     exog_direct_names : list
-        Names of the columns of the exogenous variables transformed. Only 
+        Names of the columns of the exogenous variables transformed. Only
         created if `exog` is a pandas Series or DataFrame.
-    
+
     """
 
     if not isinstance(exog, (pd.Series, pd.DataFrame)):
@@ -1413,14 +1463,18 @@ def exog_to_direct(
     if isinstance(exog, pd.Series):
         exog = exog.to_frame()
 
+    if isinstance(steps, (int, np.int32, np.int64)):
+        steps = [i for i in range(1, steps + 1)]
+
     n_rows = len(exog)
     exog_idx = exog.index
     exog_cols = exog.columns
     exog_direct = []
-    for i in range(steps):
-        exog_step = exog.iloc[i : n_rows - (steps - 1 - i), ]
+
+    for i in steps:
+        exog_step = exog.iloc[i - 1: n_rows - (np.max(steps) - i), ]
         exog_step.index = pd.RangeIndex(len(exog_step))
-        exog_step.columns = [f"{col}_step_{i + 1}" for col in exog_cols]
+        exog_step.columns = [f"{col}_step_{i}" for col in exog_cols]
         exog_direct.append(exog_step)
 
     if len(exog_direct) > 1:
@@ -1430,7 +1484,7 @@ def exog_to_direct(
 
     exog_direct_names = exog_direct.columns.to_list()
     exog_direct.index = exog_idx[-len(exog_direct):]
-    
+
     return exog_direct, exog_direct_names
 
 
@@ -1445,7 +1499,7 @@ def exog_to_direct_numpy(
     Parameters
     ----------
     exog : numpy ndarray, pandas Series, pandas DataFrame
-        Exogenous variables, shape(samples,). If exog is a pandas format, the 
+        Exogenous variables, shape(samples,). If exog is a pandas format, the
         direct exog names are created.
     steps : int
         Number of steps that will be predicted using exog.
@@ -1455,7 +1509,7 @@ def exog_to_direct_numpy(
     exog_direct : numpy ndarray
         Exogenous variables transformed.
     exog_direct_names : list, None
-        Names of the columns of the exogenous variables transformed. Only 
+        Names of the columns of the exogenous variables transformed. Only
         created if `exog` is a pandas Series or DataFrame.
 
     """
@@ -1500,53 +1554,53 @@ def date_to_index_position(
     """
     Transform a datetime string or pandas Timestamp to an integer. The integer
     represents the position of the datetime in the index.
-    
+
     Parameters
     ----------
     index : pandas Index
-        Original datetime index (must be a pandas DatetimeIndex if `date_input` 
+        Original datetime index (must be a pandas DatetimeIndex if `date_input`
         is not an int).
     date_input : int, str, pandas Timestamp
         Datetime to transform to integer.
-        
+
         + If int, returns the same integer.
         + If str or pandas Timestamp, it is converted and expanded into the index.
     date_literal : str, default 'steps'
         Variable name used in error messages.
     kwargs_pd_to_datetime : dict, default {}
         Additional keyword arguments to pass to `pd.to_datetime()`.
-    
+
     Returns
     -------
     date_position : int
         Integer representing the position of the datetime in the index.
-    
+
     """
-    
+
     if isinstance(date_input, (str, pd.Timestamp)):
         if not isinstance(index, pd.DatetimeIndex):
             raise TypeError(
                 f"Index must be a pandas DatetimeIndex when `{date_literal}` is "
                 f"not an integer. Check input series or last window."
             )
-        
+
         target_date = pd.to_datetime(date_input, **kwargs_pd_to_datetime)
         last_date = pd.to_datetime(index[-1])
         if target_date <= last_date:
             raise ValueError(
                 "The provided date must be later than the last date in the index."
             )
-        
+
         steps_diff = pd.date_range(start=last_date, end=target_date, freq=index.freq)
         date_position = len(steps_diff) - 1
-    
+
     elif isinstance(date_input, (int, np.integer)):
         date_position = date_input
     else:
         raise TypeError(
             f"`{date_literal}` must be an integer, string, or pandas Timestamp."
         )
-    
+
     return date_position
 
 
@@ -1850,8 +1904,8 @@ def save_forecaster(
     file_name : str
         File name given to the object.
     save_custom_functions : bool, default True
-        If True, save custom functions used in the forecaster (weight_func) as 
-        .py files. Custom functions need to be available in the environment 
+        If True, save custom functions used in the forecaster (weight_func) as
+        .py files. Custom functions need to be available in the environment
         where the forecaster is going to be loaded.
     verbose : bool, default True
         Print summary about the forecaster saved.
@@ -1861,7 +1915,7 @@ def save_forecaster(
     None
 
     """
-    
+
     # TODO: Ver con Ximo, esto si no tiene sufijo o no es .joblib lo cambia
     file_name = Path(file_name).with_suffix('.joblib')
 
@@ -1911,7 +1965,7 @@ def load_forecaster(
     verbose: bool = True
 ) -> object:
     """
-    Load forecaster model using joblib. If the forecaster was saved with 
+    Load forecaster model using joblib. If the forecaster was saved with
     custom user-defined classes as as window features or custom
     functions to create weights, these objects must be available
     in the environment where the forecaster is going to be loaded.
@@ -2107,7 +2161,7 @@ def select_n_jobs_fit_forecaster(
         if not regressor_name.startswith('_')
     ]
 
-    if forecaster_name in ['ForecasterDirect', 
+    if forecaster_name in ['ForecasterDirect',
                            'ForecasterDirectMultiVariate']:
         if regressor_name in linear_regressors or regressor_name == 'LGBMRegressor':
             n_jobs = 1
@@ -2666,26 +2720,29 @@ def prepare_residuals_multiseries(
     return residuals
 
 
+# TODO: Simplify after propagating steps-to-list implementation to ForecasterAutoregMultivariate
 def prepare_steps_direct(
-    max_step: int,
-    steps: Optional[Union[int, list]] = None
+        forecaster_name: str,
+        init_steps: Union[int, np.ndarray],
+        steps: Optional[Union[int, list]] = None
 ) -> list:
     """
     Prepare list of steps to be predicted in Direct Forecasters.
 
     Parameters
     ----------
-    max_step : int
-        Maximum number of future steps the forecaster will predict 
-        when using method `predict()`.
+    forecaster_name: str
+        Forecaster name
+    init_steps : int or numpy ndarray
+        Steps initialized in forecaster's definition. These are the steps available to be predicted
     steps : int, list, None, default `None`
-        Predict n steps. The value of `steps` must be less than or equal to the 
+        Predict n steps. The value of `steps` must be less than or equal to the
         value of steps defined when initializing the forecaster. Starts at 1.
-    
+
         - If `int`: Only steps within the range of 1 to int are predicted.
-        - If `list`: List of ints. Only the steps contained in the list 
+        - If `list`: List of ints. Only the steps contained in the list
         are predicted.
-        - If `None`: As many steps are predicted as were defined at 
+        - If `None`: As many steps are predicted as were defined at
         initialization.
 
     Returns
@@ -2698,10 +2755,13 @@ def prepare_steps_direct(
     if isinstance(steps, int):
         steps = list(np.arange(steps) + 1)
     elif steps is None:
-        steps = list(np.arange(max_step) + 1)
+        if forecaster_name == 'ForecasterDirect':
+            steps = list(init_steps)
+        else:
+            steps = list(np.arange(init_steps) + 1)
     elif isinstance(steps, list):
         steps = list(np.array(steps))
-    
+
     for step in steps:
         if not isinstance(step, (int, np.int64, np.int32)):
             raise TypeError(
@@ -2712,7 +2772,6 @@ def prepare_steps_direct(
     steps = [int(step) for step in steps if step is not None]
 
     return steps
-
 
 def set_skforecast_warnings(
     suppress_warnings: bool,

@@ -398,7 +398,7 @@ def backtesting_forecaster(
     """
 
     forecaters_allowed = [
-        'ForecasterRecursive', 
+        'ForecasterRecursive',
         'ForecasterDirect',
         'ForecasterEquivalentDate'
     ]
@@ -425,11 +425,11 @@ def backtesting_forecaster(
     )
     
     if type(forecaster).__name__ == 'ForecasterDirect' and \
-       forecaster.steps < cv.steps + cv.gap:
+       forecaster.max_step < cv.steps + cv.gap:
         raise ValueError(
             (f"When using a ForecasterDirect, the combination of steps "
              f"+ gap ({cv.steps + cv.gap}) cannot be greater than the `steps` parameter "
-             f"declared when the forecaster is initialized ({forecaster.steps}).")
+             f"declared when the forecaster is initialized ({forecaster.max_step}).")
         )
     
     metric_values, backtest_predictions = _backtesting_forecaster(
@@ -872,7 +872,7 @@ def backtesting_forecaster_multiseries(
     """
 
     multi_series_forecasters = [
-        'ForecasterRecursiveMultiSeries', 
+        'ForecasterRecursiveMultiSeries',
         'ForecasterDirectMultiVariate',
         'ForecasterRnn'
     ]

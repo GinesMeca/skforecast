@@ -1512,8 +1512,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         """
         
         steps = prepare_steps_direct(
-                    steps    = steps,
-                    max_step = self.steps
+                    forecaster_name = type(self).__name__,
+                    init_steps      = self.steps,
+                    steps           = steps
                 )
 
         if last_window is None:
@@ -1533,7 +1534,7 @@ class ForecasterDirectMultiVariate(ForecasterBase):
                 exog_type_in_    = self.exog_type_in_,
                 exog_names_in_   = self.exog_names_in_,
                 interval         = None,
-                max_steps        = self.steps,
+                init_steps       = self.steps,
                 series_names_in_ = self.X_train_series_names_in_
             )
 
@@ -1846,8 +1847,9 @@ class ForecasterDirectMultiVariate(ForecasterBase):
         if self.is_fitted:
             
             steps = prepare_steps_direct(
-                        steps    = steps,
-                        max_step = self.steps
+                        forecaster_name = type(self).__name__,
+                        init_steps      = self.steps,
+                        steps           = steps
                     )
 
             if use_in_sample_residuals:

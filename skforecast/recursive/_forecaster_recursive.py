@@ -1,5 +1,5 @@
 ################################################################################
-#                           ForecasterRecursive                                #
+#                            ForecasterAutoreg                                 #
 #                                                                              #
 # This work by skforecast team is licensed under the BSD 3-Clause License.     #
 ################################################################################
@@ -1075,9 +1075,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default `None`
             Series values used to create the predictors (lags) needed in the 
@@ -1301,9 +1301,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default `None`
             Series values used to create the predictors (lags) needed in the 
@@ -1328,8 +1328,8 @@ class ForecasterRecursive(ForecasterBase):
         
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
+                "ignore",
+                message="X does not have valid feature names",
                 category=UserWarning
             )
             predictions = self._recursive_predict(
@@ -1386,9 +1386,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, pandas DataFrame, default `None`
             Series values used to create the predictors (lags) needed in the 
@@ -1421,8 +1421,8 @@ class ForecasterRecursive(ForecasterBase):
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
+                "ignore",
+                message="X does not have valid feature names",
                 category=UserWarning
             )
             predictions = self._recursive_predict(
@@ -1469,9 +1469,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, default `None`
             Series values used to create the predictors (lags) needed in the 
@@ -1545,7 +1545,7 @@ class ForecasterRecursive(ForecasterBase):
             sampled_residuals = residuals[
                 rng.integers(low=0, high=len(residuals), size=(steps, n_boot))
             ]
-        
+
         boot_columns = []
         boot_predictions = np.full(
                                shape      = (steps, n_boot),
@@ -1555,8 +1555,8 @@ class ForecasterRecursive(ForecasterBase):
                            )
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", 
-                message="X does not have valid feature names", 
+                "ignore",
+                message="X does not have valid feature names",
                 category=UserWarning
             )
             for i in range(n_boot):
@@ -1621,9 +1621,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, default `None`
             Series values used to create the predictors (lags) needed in the 
@@ -1720,9 +1720,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         last_window : pandas Series, default `None`
             Series values used to create the predictors (lags) needed in the 
@@ -1806,9 +1806,9 @@ class ForecasterRecursive(ForecasterBase):
         Parameters
         ----------
         steps : int, str, pandas Timestamp
-            Number of steps to predict. 
-            
-            + If steps is int, number of steps to predict. 
+            Number of steps to predict.
+
+            + If steps is int, number of steps to predict.
             + If str or pandas Datetime, the prediction will be up to that date.
         distribution : Object
             A distribution object from scipy.stats.
