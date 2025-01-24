@@ -25,6 +25,7 @@ from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     initialize_lags,
+    initialize_window_features,
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
@@ -184,6 +185,7 @@ class ForecasterRnn(ForecasterBase):
         regressor: object,
         levels: Union[str, list],
         lags: Optional[Union[int, list, str]] = "auto",
+        window_features: object | list[object] | None = None,
         steps: Optional[Union[int, list, str]] = "auto",
         transformer_series: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
@@ -247,7 +249,9 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
 
-        self.window_size = self.max_lag
+        self.window_features, self.window_features_names, self.max_size_window_features = (
+            initialize_window_features(window_features)
+        )
 
         layer_end = self.regressor.layers[-1]
 
