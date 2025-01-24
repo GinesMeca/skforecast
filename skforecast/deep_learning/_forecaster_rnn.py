@@ -27,6 +27,7 @@ from ..utils import (
     initialize_lags,
     initialize_window_features,
     initialize_steps,
+    initialize_levels,
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
@@ -278,6 +279,7 @@ class ForecasterRnn(ForecasterBase):
                 "`steps` default value = 'auto'. `steps` inferred from regressor "
                 "architecture. Avoid the warning with steps=steps."
             )
+            self.max_step = max(self.steps)
         else:
             self.steps, self.max_step = initialize_steps(type(self).__name__, steps)
 
@@ -291,14 +293,8 @@ class ForecasterRnn(ForecasterBase):
                 f"`levels` argument must be a string, list or. Got {type(levels)}."
             )
 
-        if isinstance(levels, str):
-            self.levels = [levels]
-        elif isinstance(levels, list):
-            self.levels = levels
-        else:
-            raise TypeError(
-                f"`levels` argument must be a string or a list. Got {type(levels)}."
-            )
+        # Levels initialization
+        self.levels = initialize_levels(type(self).__name__, levels)
 
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.out_sample_residuals_ = None

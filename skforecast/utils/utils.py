@@ -358,6 +358,19 @@ def initialize_weights(
 
     return weight_func, source_code_weight_func, series_weights
 
+def initialize_levels(
+        forecaster_name: str,
+        levels: str | list
+) -> list:
+    if isinstance(levels, str):
+        levels = [levels]
+    elif isinstance(levels, list):
+        levels = levels
+    else:
+        raise TypeError(
+            f"`levels` argument must be a string or a list. Got {type(levels)}."
+        )
+    return levels
 
 def initialize_transformer_series(
     forecaster_name: str,
