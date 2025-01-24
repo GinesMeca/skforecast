@@ -26,6 +26,7 @@ from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     initialize_lags,
     initialize_window_features,
+    initialize_steps,
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
@@ -267,6 +268,7 @@ class ForecasterRnn(ForecasterBase):
                 "Input shape of the regressor should be Input(shape=(lags, n_series))."
             )
 
+        # Steps initialization:
         if steps == "auto":
             if keras.__version__ < "3.0":
                 self.steps = np.arange(layer_end.output_shape[1]) + 1
@@ -276,16 +278,9 @@ class ForecasterRnn(ForecasterBase):
                 "`steps` default value = 'auto'. `steps` inferred from regressor "
                 "architecture. Avoid the warning with steps=steps."
             )
-        elif isinstance(steps, int):
-            self.steps = np.arange(steps) + 1
-        elif isinstance(steps, list):
-            self.steps = np.array(steps)
         else:
-            raise TypeError(
-                f"`steps` argument must be an int, list or 'auto'. Got {type(steps)}."
-            )
+            self.steps, self.max_step = initialize_steps(type(self).__name__, steps)
 
-        self.max_step = np.max(self.steps)
         if keras.__version__ < "3.0":
             self.outputs = layer_end.output_shape[-1]
         else:
