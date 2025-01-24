@@ -24,6 +24,7 @@ import skforecast
 from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
+    initialize_lags,
     check_predict_input,
     check_select_fit_kwargs,
     check_y,
@@ -230,6 +231,7 @@ class ForecasterRnn(ForecasterBase):
         self.regressor = regressor  # TODO: Create copy of regressor copy(regressor)
         layer_init = self.regressor.layers[0]
 
+        # Lags initialization
         if lags == "auto":
             if keras.__version__ < "3.0":
                 self.lags = np.arange(layer_init.input_shape[0][1]) + 1
@@ -240,16 +242,11 @@ class ForecasterRnn(ForecasterBase):
                 "Setting `lags` = 'auto'. `lags` are inferred from the regressor "
                 "architecture. Avoid the warning with lags=lags."
             )
-        elif isinstance(lags, int):
-            self.lags = np.arange(lags) + 1
-        elif isinstance(lags, list):
-            self.lags = np.array(lags)
+            self.lags_names = [f'lag_{i}' for i in self.lags]
+            self.max_lag = max(self.lags)
         else:
-            raise TypeError(
-                f"`lags` argument must be an int, list or 'auto'. Got {type(lags)}."
-            )
+            self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
 
-        self.max_lag = np.max(self.lags)
         self.window_size = self.max_lag
 
         layer_end = self.regressor.layers[-1]
