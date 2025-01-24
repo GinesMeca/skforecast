@@ -186,9 +186,9 @@ class ForecasterRnn(ForecasterBase):
         self,
         regressor: object,
         levels: Union[str, list],
-        lags: int | list[int] | np.ndarray[int] | range[int] | str = "auto",
+        lags: int | list[int] | np.ndarray[int] | range | str = "auto",
         window_features: object | list[object] | None = None,
-        steps: int | list[int] | np.ndarray[int] | range[int] | str = "auto",
+        steps: int | list[int] | np.ndarray[int] | range | str = "auto",
         transformer_series: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
         ),
