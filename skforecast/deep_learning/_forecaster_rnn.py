@@ -283,6 +283,17 @@ class ForecasterRnn(ForecasterBase):
             regressor=self.regressor, fit_kwargs=fit_kwargs
         )
 
+        # Window size definition:
+        self.window_size = max(
+            [ws for ws in [self.max_lag, self.max_size_window_features]
+             if ws is not None]
+        )
+        self.window_features_class_names = None
+        if window_features is not None:
+            self.window_features_class_names = [
+                type(wf).__name__ for wf in self.window_features
+            ]
+
         # Inputs and outputs definition:
         try:
             if keras.__version__ < "3.0":
