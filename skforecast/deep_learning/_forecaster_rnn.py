@@ -122,7 +122,7 @@ class ForecasterRnn(ForecasterBase):
         Frequency of Index of the input used in training.
     training_range_: pandas Index
         First and last values of index of the data used during training.
-    series_names_in_ : list
+    X_train_series_names_in_ : list
         Names of the series used during training.
     exog_in_ : bool
         If the forecaster has been trained using exogenous variable/s.
@@ -209,7 +209,7 @@ class ForecasterRnn(ForecasterBase):
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
         self.exog_names_in_ = None
-        self.series_names_in_ = None
+        self.X_train_series_names_in_ = None
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
         self.is_fitted = False
@@ -339,7 +339,7 @@ class ForecasterRnn(ForecasterBase):
             f"Transformer for series: {self.transformer_series} \n"
             f"Window size: {self.window_size} \n"
             f"Target series, levels: {self.levels} \n"
-            f"Multivariate series (names): {self.series_names_in_} \n"
+            f"Multivariate series (names): {self.X_train_series_names_in_} \n"
             f"Maximum steps predicted: {self.steps} \n"
             f"Training range: {self.training_range_.to_list() if self.is_fitted else None} \n"
             f"Training index type: {str(self.index_type_).split('.')[-1][:-2] if self.is_fitted else None} \n"
@@ -442,7 +442,7 @@ class ForecasterRnn(ForecasterBase):
         if not isinstance(series, pd.DataFrame):
             raise TypeError(f"`series` must be a pandas DataFrame. Got {type(series)}.")
 
-        series_names_in_ = list(series.columns)
+        X_train_series_names_in_ = list(series.columns)
 
         if not set(self.levels).issubset(set(series.columns)):
             raise ValueError(
@@ -464,13 +464,13 @@ class ForecasterRnn(ForecasterBase):
             )
 
         if self.transformer_series is None:
-            self.transformer_series_ = {serie: None for serie in series_names_in_}
+            self.transformer_series_ = {serie: None for serie in X_train_series_names_in_}
         elif not isinstance(self.transformer_series, dict):
             self.transformer_series_ = {
-                serie: clone(self.transformer_series) for serie in series_names_in_
+                serie: clone(self.transformer_series) for serie in X_train_series_names_in_
             }
         else:
-            self.transformer_series_ = {serie: None for serie in series_names_in_}
+            self.transformer_series_ = {serie: None for serie in X_train_series_names_in_}
             # Only elements already present in transformer_series_ are updated
             self.transformer_series_.update(
                 (k, v)
@@ -587,14 +587,14 @@ class ForecasterRnn(ForecasterBase):
         self.exog_type_in_ = None
         self.exog_dtypes_in_ = None
         self.exog_names_in_ = None
-        self.series_names_in_ = None
+        self.X_train_series_names_in_ = None
         self.X_train_dim_names_ = None
         self.y_train_dim_names_ = None
         self.in_sample_residuals_ = None
         self.is_fitted = False
         self.training_range_ = None
 
-        self.series_names_in_ = list(series.columns)
+        self.X_train_series_names_in_ = list(series.columns)
 
         X_train, y_train, X_train_dim_names_ = self.create_train_X_y(series=series)
         self.X_train_dim_names_ = X_train_dim_names_["X_train"]
@@ -743,12 +743,12 @@ class ForecasterRnn(ForecasterBase):
             max_steps=self.max_step,
             levels=levels,
             levels_forecaster=self.levels,
-            series_names_in_=self.series_names_in_,
+            series_names_in_=self.X_train_series_names_in_,
         )
 
         last_window = last_window.iloc[-self.window_size :,].copy()
 
-        for serie_name in self.series_names_in_:
+        for serie_name in self.X_train_series_names_in_:
             last_window_serie = transform_series(
                 series=last_window[serie_name],
                 transformer=self.transformer_series_[serie_name],
@@ -944,12 +944,12 @@ class ForecasterRnn(ForecasterBase):
             max_steps=self.max_step,
             levels=levels,
             levels_forecaster=self.levels,
-            series_names_in_=self.series_names_in_,
+            series_names_in_=self.X_train_series_names_in_,
         )
 
         last_window = last_window.iloc[-self.window_size:, ].copy()
 
-        for serie_name in self.series_names_in_:
+        for serie_name in self.X_train_series_names_in_:
             last_window_serie = transform_series(
                 series=last_window[serie_name],
                 transformer=self.transformer_series_[serie_name],
