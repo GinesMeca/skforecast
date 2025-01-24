@@ -71,7 +71,7 @@ def initialize_lags(
         Names of the lags used as predictors.
     max_lag : int, None
         Maximum value of the lags.
-    
+
     """
 
     lags_names = None
@@ -84,7 +84,7 @@ def initialize_lags(
 
         if isinstance(lags, (list, tuple, range)):
             lags = np.array(lags)
-        
+
         if isinstance(lags, np.ndarray):
             if lags.size == 0:
                 return None, None, None
@@ -97,7 +97,8 @@ def initialize_lags(
         else:
             if forecaster_name == 'ForecasterRNN':
                 raise TypeError(
-                    f"`lags` argument must be an int, list or 'auto'. Got {type(lags)}."
+                    f"`lags` argument must be an int, 1d numpy ndarray, range, "
+                    f"tuple, list or 'auto'. Got {type(lags)}."
                 )
             elif forecaster_name == 'ForecasterDirectMultiVariate':
                 raise TypeError(
@@ -109,12 +110,67 @@ def initialize_lags(
                     f"`lags` argument must be a int, 1d numpy ndarray, range, "
                     f"tuple or list. Got {type(lags)}."
                 )
-        
+
         lags = np.sort(lags)
         lags_names = [f'lag_{i}' for i in lags]
         max_lag = max(lags)
 
     return lags, lags_names, max_lag
+
+
+def initialize_steps(
+        forecaster_name: str,
+        steps: Any
+) -> tuple[np.ndarray[int] | None, int | None]:
+    """
+    Check steps argument input and generate the corresponding numpy ndarray.
+
+    Parameters
+    ----------
+    forecaster_name : str
+        Forecaster name.
+    steps : Any
+        Steps to be predicted.
+
+    Returns
+    -------
+    steps : numpy ndarray, None
+        Steps to be predicted.
+    max_step : int, None
+        Maximum value of the steps.
+
+    """
+
+    max_step = None
+    if steps is not None:
+        if isinstance(steps, int):
+            if steps < 1:
+                raise ValueError("Minimum value of steps allowed is 1.")
+            steps = np.arange(1, steps + 1)
+
+        if isinstance(steps, (list, tuple, range)):
+            steps = np.array(steps)
+
+        if isinstance(steps, np.ndarray):
+            if steps.size == 0:
+                return None, None
+            if steps.ndim != 1:
+                raise ValueError("`steps` must be a 1-dimensional array.")
+            if not np.issubdtype(steps.dtype, np.integer):
+                raise TypeError("All values in `steps` must be integers.")
+            if np.any(steps < 1):
+                raise ValueError("Minimum value of steps allowed is 1.")
+        else:
+            if forecaster_name == 'ForecasterRNN':
+                raise TypeError(
+                    f"`steps` argument must be an int, 1d numpy ndarray, range, "
+                    f"tuple, list or 'auto'. Got {type(steps)}."
+                )
+
+        steps = np.sort(steps)
+        max_step = max(steps)
+
+    return steps, max_step
 
 
 def initialize_window_features(
