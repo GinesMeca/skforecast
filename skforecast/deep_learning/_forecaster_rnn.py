@@ -234,6 +234,7 @@ class ForecasterRnn(ForecasterBase):
         # Infer parameters from the model
         self.regressor = regressor  # TODO: Create copy of regressor copy(regressor)
         layer_init = self.regressor.layers[0]
+        layer_end = self.regressor.layers[-1]
 
         # Lags initialization
         if lags == "auto":
@@ -251,23 +252,10 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
 
+        # Window features initialization
         self.window_features, self.window_features_names, self.max_size_window_features = (
             initialize_window_features(window_features)
         )
-
-        layer_end = self.regressor.layers[-1]
-
-        try:
-            if keras.__version__ < "3.0":
-                self.series = layer_end.output_shape[-1]
-            else:
-                self.series = layer_end.output.shape[-1]
-        # if does not work, break the and raise an error the input shape should
-        # be shape=(lags, n_series))
-        except:
-            raise TypeError(
-                "Input shape of the regressor should be Input(shape=(lags, n_series))."
-            )
 
         # Steps initialization:
         if steps == "auto":
@@ -283,19 +271,10 @@ class ForecasterRnn(ForecasterBase):
         else:
             self.steps, self.max_step = initialize_steps(type(self).__name__, steps)
 
-        if keras.__version__ < "3.0":
-            self.outputs = layer_end.output_shape[-1]
-        else:
-            self.outputs = layer_end.output.shape[-1]
-
-        if not isinstance(levels, (list, str, type(None))):
-            raise TypeError(
-                f"`levels` argument must be a string, list or. Got {type(levels)}."
-            )
-
         # Levels initialization
         self.levels = initialize_levels(type(self).__name__, levels)
 
+        # Rest of vars:
         self.in_sample_residuals_ = {step: None for step in self.steps}
         self.out_sample_residuals_ = None
 
@@ -303,6 +282,24 @@ class ForecasterRnn(ForecasterBase):
         self.fit_kwargs = check_select_fit_kwargs(
             regressor=self.regressor, fit_kwargs=fit_kwargs
         )
+
+        # Inputs and outputs definition:
+        try:
+            if keras.__version__ < "3.0":
+                self.series = layer_end.output_shape[-1]
+            else:
+                self.series = layer_end.output.shape[-1]
+        # if does not work, break the and raise an error the input shape should
+        # be shape=(lags, n_series))
+        except:
+            raise TypeError(
+                "Input shape of the regressor should be Input(shape=(lags, n_series))."
+            )
+
+        if keras.__version__ < "3.0":
+            self.outputs = layer_end.output_shape[-1]
+        else:
+            self.outputs = layer_end.output.shape[-1]
 
     def __repr__(self) -> str:
         """
