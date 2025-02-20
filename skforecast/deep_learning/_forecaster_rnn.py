@@ -25,7 +25,6 @@ from ..base import ForecasterBase
 from ..exceptions import IgnoredArgumentWarning
 from ..utils import (
     initialize_lags,
-    initialize_window_features,
     initialize_steps,
     initialize_levels,
     check_predict_input,
@@ -187,7 +186,6 @@ class ForecasterRnn(ForecasterBase):
         regressor: object,
         levels: Union[str, list],
         lags: int | list[int] | np.ndarray[int] | range | str = "auto",
-        window_features: object | list[object] | None = None,
         steps: int | list[int] | np.ndarray[int] | range | str = "auto",
         transformer_series: Optional[Union[object, dict]] = MinMaxScaler(
             feature_range=(0, 1)
@@ -253,9 +251,7 @@ class ForecasterRnn(ForecasterBase):
             self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
 
         # Window features initialization
-        self.window_features, self.window_features_names, self.max_size_window_features = (
-            initialize_window_features(window_features)
-        )
+        self.window_features, self.window_features_names, self.max_size_window_features = (None, None, None)
 
         # Steps initialization:
         if steps == "auto":
