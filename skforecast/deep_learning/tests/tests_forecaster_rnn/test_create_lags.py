@@ -20,9 +20,9 @@ recurrent_units = 100
 dense_units = [128, 64]
 
 
-def test_check_create_lags_exception_when_n_splits_less_than_0():
+def test_check_create_lags_exception_when_n_rows_less_than_0():
     """
-    Check exception is raised when n_splits in _create_lags is less than 0.
+    Check exception is raised when n_rows in _create_lags is less than 0.
     """
     series = pd.DataFrame(np.arange(10), columns=["l1"])
     y_array = np.arange(10)
@@ -60,16 +60,16 @@ def test_check_create_lags_exception_when_n_splits_less_than_0():
             (
                 np.array(
                     [
-                        [0.0, 1.0, 2.0],
-                        [1.0, 2.0, 3.0],
-                        [2.0, 3.0, 4.0],
-                        [3.0, 4.0, 5.0],
-                        [4.0, 5.0, 6.0],
-                        [5.0, 6.0, 7.0],
-                        [6.0, 7.0, 8.0],
+                        [2.0, 1.0, 0.0],
+                        [3.0, 2.0, 1.0],
+                        [4.0, 3.0, 2.0],
+                        [5.0, 4.0, 3.0],
+                        [6.0, 5.0, 4.0],
+                        [7.0, 6.0, 5.0],
+                        [8.0, 7.0, 6.0],
                     ]
                 ),
-                np.array([[3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]]),
+                np.array([[3.0], [4.0], [5.0], [6.0], [7.0], [8.0], [9.0]]),
             ),
         ),
         # test_create_lags_when_lags_is_list_interspersed_lags_steps_1_and_y_is_numpy_arange_10
@@ -77,8 +77,8 @@ def test_check_create_lags_exception_when_n_splits_less_than_0():
             [1, 5],
             1,
             (
-                np.array([[0.0, 4.0], [1.0, 5.0], [2.0, 6.0], [3.0, 7.0], [4.0, 8.0]]),
-                np.array([[5.0, 6.0, 7.0, 8.0, 9.0]]),
+                np.array([[4.0, 0.0], [5.0, 1.0], [6.0, 2.0], [7.0, 3.0], [8.0, 4.0]]),
+                np.array([[5.0], [6.0], [7.0], [8.0], [9.0]]),
             ),
         ),
         # test_create_lags_when_lags_is_3_steps_2_and_y_is_numpy_arange_10
@@ -88,16 +88,23 @@ def test_check_create_lags_exception_when_n_splits_less_than_0():
             (
                 np.array(
                     [
-                        [0.0, 1.0, 2.0],
-                        [1.0, 2.0, 3.0],
-                        [2.0, 3.0, 4.0],
-                        [3.0, 4.0, 5.0],
-                        [4.0, 5.0, 6.0],
-                        [5.0, 6.0, 7.0],
+                        [2.0, 1.0, 0.0],
+                        [3.0, 2.0, 1.0],
+                        [4.0, 3.0, 2.0],
+                        [5.0, 4.0, 3.0],
+                        [6.0, 5.0, 4.0],
+                        [7.0, 6.0, 5.0],
                     ]
                 ),
                 np.array(
-                    [[3.0, 4.0, 5.0, 6.0, 7.0, 8.0], [4.0, 5.0, 6.0, 7.0, 8.0, 9.0]]
+                    [
+                        [3.0, 4.0],
+                        [4.0, 5.0],
+                        [5.0, 6.0],
+                        [6.0, 7.0],
+                        [7.0, 8.0],
+                        [8.0, 9.0],
+                    ]
                 ),
             ),
         ),
@@ -106,14 +113,12 @@ def test_check_create_lags_exception_when_n_splits_less_than_0():
             3,
             5,
             (
-                np.array([[0.0, 1.0, 2.0], [1.0, 2.0, 3.0], [2.0, 3.0, 4.0]]),
+                np.array([[2.0, 1.0, 0.0], [3.0, 2.0, 1.0], [4.0, 3.0, 2.0]]),
                 np.array(
                     [
-                        [3.0, 4.0, 5.0],
-                        [4.0, 5.0, 6.0],
-                        [5.0, 6.0, 7.0],
-                        [6.0, 7.0, 8.0],
-                        [7.0, 8.0, 9.0],
+                        [3.0, 4.0, 5.0, 6.0, 7.0],
+                        [4.0, 5.0, 6.0, 7.0, 8.0],
+                        [5.0, 6.0, 7.0, 8.0, 9.0],
                     ]
                 ),
             ),
@@ -141,4 +146,4 @@ def test_create_lags_several_configurations(lags, steps, expected):
     results = forecaster._create_lags(y=np.arange(10))
 
     np.testing.assert_array_almost_equal(results[0], expected[0])
-    np.testing.assert_array_almost_equal(results[1], np.transpose(expected[1]))
+    np.testing.assert_array_almost_equal(results[1], expected[1])

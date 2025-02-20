@@ -382,8 +382,8 @@ class ForecasterRnn(ForecasterBase):
 
         """
 
-        n_splits = len(y) - self.max_lag - self.max_step + 1  # rows of y_data
-        if n_splits <= 0:
+        n_rows = len(y) - self.window_size - (self.max_step - 1)  # rows of y_data
+        if n_rows <= 0:
             raise ValueError(
                 (
                     f"The maximum lag ({self.max_lag}) must be less than the length "
@@ -392,22 +392,16 @@ class ForecasterRnn(ForecasterBase):
             )
 
         X_data = np.full(
-            shape=(n_splits, (self.max_lag)), fill_value=np.nan, order="F", dtype=float
+            shape=(n_rows, len(self.lags)), fill_value=np.nan, order="F", dtype=float
         )
-        for i, lag in enumerate(range(self.max_lag - 1, -1, -1)):
-            X_data[:, i] = y[self.max_lag - lag - 1 : -(lag + self.max_step)]
+        for i, lag in enumerate(self.lags):
+            X_data[:, i] = y[self.window_size - lag : -(lag + self.max_step - 1)]
 
         y_data = np.full(
-            shape=(n_splits, self.max_step), fill_value=np.nan, order="F", dtype=float
+            shape=(n_rows, len(self.steps)), fill_value=np.nan, order="F", dtype=float
         )
-        for step in range(self.max_step):
-            y_data[:, step] = y[self.max_lag + step : self.max_lag + step + n_splits]
-
-        # Get lags index
-        X_data = X_data[:, self.lags - 1]
-
-        # Get steps index
-        y_data = y_data[:, self.steps - 1]
+        for i, step in enumerate(self.steps):
+            y_data[:, i] = y[self.window_size + (step - 1) : self.window_size + (step - 1) + n_rows]
 
         return X_data, y_data
 
