@@ -251,6 +251,7 @@ class ForecasterRnn(ForecasterBase):
             self.lags, self.lags_names, self.max_lag = initialize_lags(type(self).__name__, lags)
 
         # Window features initialization
+        window_features = None
         self.window_features, self.window_features_names, self.max_size_window_features = (None, None, None)
 
         # Steps initialization:
